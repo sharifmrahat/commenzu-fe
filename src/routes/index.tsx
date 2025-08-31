@@ -8,9 +8,11 @@ import SignupPage from "../pages/SignupPage";
 
 import PrivateRoute from "./PrivateRoute";
 import PublicRoute from "./PublicRoute";
+import Header from "../components/Header";
 
 const AppRoutes = () => (
   <Router>
+    <Header />
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/posts" element={<PostsPage />} />

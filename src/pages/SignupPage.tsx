@@ -1,55 +1,110 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/axios";
+import { useForm } from "react-hook-form";
+
+import { Button } from "../components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "../components/ui/form";
+import { Label } from "../components/ui/label";
+import { Input } from "../components/ui/input";
+
+type SignupFormValues = {
+  name: string;
+  email: string;
+  password: string;
+};
 
 const SignupPage = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<SignupFormValues>({
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: SignupFormValues) => {
     try {
-      await api.post("/auth/signup", { name, email, password });
-      navigate("/login"); // go to login after signup
-    } catch (err) {
-      console.error(err);
-      alert("Signup failed");
+      await api.post("/auth/signup", values);
+      navigate("/login");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      alert(err?.message || "Signup failed");
     }
   };
 
   return (
-    <form onSubmit={handleSignup} style={{ padding: 24, maxWidth: 400 }}>
-      <h1 className="text-xl font-bold">Signup</h1>
-      <input
-        type="text"
-        placeholder="Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        className="block mb-2 w-full p-2 border rounded"
-      />
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        className="block mb-2 w-full p-2 border rounded"
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        className="block mb-2 w-full p-2 border rounded"
-      />
-      <button type="submit" className="p-2 bg-green-500 text-white rounded">
-        Signup
-      </button>
-    </form>
+    <div className="max-w-md mx-auto mt-10 p-6 border rounded">
+      <h1 className="text-2xl font-bold mb-6">Signup</h1>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Name */}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <Label>Name</Label>
+                <FormControl>
+                  <Input placeholder="Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Email */}
+          <FormField
+            control={form.control}
+            name="email"
+            rules={{
+              required: "Email is required",
+              pattern: {
+                value: /\S+@\S+\.\S+/,
+                message: "Invalid email address",
+              },
+            }}
+            render={({ field }) => (
+              <FormItem>
+                <Label>Email</Label>
+                <FormControl>
+                  <Input placeholder="Email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Password */}
+          <FormField
+            control={form.control}
+            name="password"
+            rules={{ required: "Password is required" }}
+            render={({ field }) => (
+              <FormItem>
+                <Label>Password</Label>
+                <FormControl>
+                  <Input type="password" placeholder="Password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" className="w-full">
+            Signup
+          </Button>
+        </form>
+      </Form>
+    </div>
   );
 };
 

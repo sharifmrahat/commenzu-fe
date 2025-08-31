@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { logout } from "../redux/features/auth/authSlice";
+import { Button } from "../components/ui/button"; // adjust path
 
 const Header = () => {
   const { accessToken, user } = useAppSelector((state) => state.auth);
@@ -13,42 +14,31 @@ const Header = () => {
   };
 
   return (
-    <header
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        padding: "16px 24px",
-        borderBottom: "1px solid #ccc",
-      }}
-    >
+    <header className="flex justify-between items-center p-4 border-b border-gray-200">
       <div>
-        <Link to="/" style={{ fontWeight: "bold", fontSize: 20 }}>
+        <Link to="/" className="text-2xl font-bold">
           Commenzu
         </Link>
       </div>
 
-      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+      <div className="flex items-center gap-4">
         {!accessToken ? (
           <>
-            <Link to="/login">Login</Link>
-            <Link to="/signup">Signup</Link>
+            <Link to="/login">
+              <Button variant="outline" size="sm">
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button size="sm">Signup</Button>
+            </Link>
           </>
         ) : (
           <>
-            <span>Hi, {user?.name}</span>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: "4px 8px",
-                backgroundColor: "#f00",
-                color: "#fff",
-                borderRadius: 4,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
+            <span className="text-gray-700">Hi, {user?.name}</span>
+            <Button variant="destructive" size="sm" onClick={handleLogout}>
               Logout
-            </button>
+            </Button>
           </>
         )}
       </div>
