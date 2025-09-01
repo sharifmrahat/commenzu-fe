@@ -45,16 +45,16 @@ const PostPage = () => {
   return (
     <div style={{ padding: 24 }}>
       <h1 className="text-lg lg:text-xl font-semibold underline mb-5">Posts</h1>
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {posts?.map((post) => (
           <Link key={post.id} to={`/posts/${post.id}`}>
-            <div className="card p-4 border rounded-md max-w-sm border-slate-200 shadow-md hover:shadow-lg">
+            <div className="card p-4 border rounded-md max-w-sm border-slate-200 shadow-md hover:shadow-lg h-full">
               {post.thumbnail && (
                 <img src={post.thumbnail} alt={post.title} className="mt-2" />
               )}
               <h2 className="text-xl font-bold my-2">{post.title}</h2>
               <p className="text-justify">{post.content.slice(0, 100)}...</p>
-              <div className="text-slate-600 flex justify-between items-center mt-4">
+              <div className="text-slate-600 flex justify-between items-center mt-4 ">
                 <p>By {post.author?.name}</p>
                 <p>{format(post.createdAt, "MMM dd, yyyy")}</p>
               </div>
