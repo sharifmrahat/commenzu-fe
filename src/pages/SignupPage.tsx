@@ -44,7 +44,7 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 border rounded">
+    <div className="max-w-md lg:mx-auto mt-10 p-4 lg:p-6 border rounded-md mx-2">
       <h1 className="text-2xl font-bold mb-6">Signup</h1>
 
       <Form {...form}>
