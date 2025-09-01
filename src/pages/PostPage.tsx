@@ -1,4 +1,3 @@
-// src/pages/PostPage.tsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";

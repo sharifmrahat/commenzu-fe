@@ -1,6 +1,6 @@
 # CommenZu | FE
 
-A post and comment system with nested replies, reactions (like/dislike), and real time streaming.
+A post and comment system with nested replies, reactions (like/dislike), with real time streaming.
 
 ## 🔗 Important Links
 

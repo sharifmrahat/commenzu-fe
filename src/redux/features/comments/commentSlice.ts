@@ -1,4 +1,3 @@
-// src/redux/features/comments/commentSlice.ts
 import {
   createSlice,
   createAsyncThunk,
@@ -40,18 +39,9 @@ const initialState: CommentsState = {
 };
 
 //* Thunks
-// export const fetchComments = createAsyncThunk<Comment[], string>(
-//   "comments/fetch",
-//   async (postId) => {
-//     const res = await api.get(`/comments?postId=${postId}`);
-//     return res.data.data.result;
-//   }
-// );
-
-// commentSlice.ts
 export const fetchComments = createAsyncThunk<
-  Comment[], // return type
-  { postId: string; sortBy?: string; sortOrder?: string } // arg type
+  Comment[],
+  { postId: string; sortBy?: string; sortOrder?: string }
 >("comments/fetch", async ({ postId, sortBy, sortOrder }) => {
   const params = new URLSearchParams({ postId });
 
@@ -122,7 +112,6 @@ const commentSlice = createSlice({
 
       const { type, userId } = action.payload;
 
-      // Check if the user already reacted
       const existingIdx = comment.reactions.findIndex(
         (r) => r.user.id === userId
       );
@@ -131,7 +120,6 @@ const commentSlice = createSlice({
         const existing = comment.reactions[existingIdx];
 
         if (existing.type === type) {
-          // Case 1: User clicked the same reaction → remove it
           comment.reactions.splice(existingIdx, 1);
 
           if (type === "Like") {
@@ -140,7 +128,6 @@ const commentSlice = createSlice({
             comment.dislikesCount = Math.max(0, comment.dislikesCount - 1);
           }
         } else {
-          // Case 2: User switched from Like → Dislike or vice versa
           comment.reactions[existingIdx].type = type;
 
           if (type === "Like") {
@@ -152,9 +139,8 @@ const commentSlice = createSlice({
           }
         }
       } else {
-        // Case 3: New reaction
         comment.reactions.push({
-          id: Date.now().toString(), // temporary id
+          id: Date.now().toString(),
           type,
           commentId: comment.id,
           user: { id: userId, name: "" },

@@ -48,13 +48,11 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
-  // Sorting state
   const [sortBy, setSortBy] = useState<
     "createdAt" | "likesCount" | "dislikesCount"
   >("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Inside useEffect
   useEffect(() => {
     if (!postId) return;
 
@@ -74,6 +72,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     return () => {
       socket.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, sortBy, sortOrder, dispatch]);
 
   const handleAddComment = async () => {
@@ -156,7 +155,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
       )}
 
       {/* Sorting Controls */}
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center justify-end">
         <Label className="font-medium">Sort by:</Label>
 
         {/* Sort By */}

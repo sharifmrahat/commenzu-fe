@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { logout } from "../redux/features/auth/authSlice";
-import { Button } from "../components/ui/button"; // adjust path
+import { Button } from "../components/ui/button";
 
 const Header = () => {
   const { accessToken, user } = useAppSelector((state) => state.auth);

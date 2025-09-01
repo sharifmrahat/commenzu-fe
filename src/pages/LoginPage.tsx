@@ -43,7 +43,7 @@ const LoginPage = () => {
       );
       toast.success(res?.data?.message || "Login Success!");
 
-      navigate("/"); // redirect home
+      navigate("/");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
@@ -79,7 +79,6 @@ const LoginPage = () => {
             )}
           />
 
-          {/* Password */}
           <FormField
             control={form.control}
             name="password"

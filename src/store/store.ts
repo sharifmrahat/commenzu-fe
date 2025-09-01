@@ -13,13 +13,12 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
-import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
+import storage from "redux-persist/lib/storage";
 
-// Persist config for auth slice
 const authPersistConfig = {
   key: "auth",
   storage,
-  whitelist: ["accessToken", "user"], // only persist these keys
+  whitelist: ["accessToken", "user"],
 };
 
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);

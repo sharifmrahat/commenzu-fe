@@ -1,4 +1,3 @@
-// src/redux/features/posts/postSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "../../../lib/axios";
 import type { RootState } from "../../../store/store";
@@ -27,16 +26,14 @@ const initialState: PostState = {
   error: null,
 };
 
-// src/redux/features/posts/postSlice.ts
 export const fetchPosts = createAsyncThunk<
   Post[],
   { page?: number; size?: number }
 >("posts", async ({ page = 1, size = 20 }) => {
   const res = await api.get(`/posts`, { params: { page, size } });
-  return res.data.data.result; // adjust to your backend response
+  return res.data.data.result;
 });
 
-// Slice
 const postSlice = createSlice({
   name: "posts",
   initialState,
