@@ -40,13 +40,27 @@ const initialState: CommentsState = {
 };
 
 //* Thunks
-export const fetchComments = createAsyncThunk<Comment[], string>(
-  "comments/fetch",
-  async (postId) => {
-    const res = await api.get(`/comments?postId=${postId}`);
-    return res.data.data.result;
-  }
-);
+// export const fetchComments = createAsyncThunk<Comment[], string>(
+//   "comments/fetch",
+//   async (postId) => {
+//     const res = await api.get(`/comments?postId=${postId}`);
+//     return res.data.data.result;
+//   }
+// );
+
+// commentSlice.ts
+export const fetchComments = createAsyncThunk<
+  Comment[], // return type
+  { postId: string; sortBy?: string; sortOrder?: string } // arg type
+>("comments/fetch", async ({ postId, sortBy, sortOrder }) => {
+  const params = new URLSearchParams({ postId });
+
+  if (sortBy) params.append("sortBy", sortBy);
+  if (sortOrder) params.append("sortOrder", sortOrder);
+
+  const res = await api.get(`/comments?${params.toString()}`);
+  return res.data.data.result;
+});
 
 export const addComment = createAsyncThunk<
   Comment,

@@ -1,6 +1,6 @@
 # CommenZu | FE
 
-A post and comment system with nested replies, reactions (like/dislike), and JWT-based authentication.
+A post and comment system with nested replies, reactions (like/dislike), and real time streaming.
 
 ## 🔗 Important Links
 

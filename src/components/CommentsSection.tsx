@@ -24,6 +24,14 @@ import { Button } from "../components/ui/button";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { connectSocket } from "../lib/socket";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 interface CommentsSectionProps {
   postId: string;
@@ -40,15 +48,21 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
+  // Sorting state
+  const [sortBy, setSortBy] = useState<
+    "createdAt" | "likesCount" | "dislikesCount"
+  >("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
   // Inside useEffect
   useEffect(() => {
     if (!postId) return;
 
-    dispatch(fetchComments(postId))
+    dispatch(fetchComments({ postId, sortBy, sortOrder }))
       .unwrap()
       .catch(() => toast.error("Failed to load comments"));
 
-    const socket = connectSocket(); // connect socket
+    const socket = connectSocket();
 
     socket.on("newComment", (comment: Comment) => {
       if (comment.postId === postId && comment.user.id !== user?.id) {
@@ -60,7 +74,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     return () => {
       socket.disconnect();
     };
-  }, [postId, dispatch]);
+  }, [postId, sortBy, sortOrder, dispatch]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -80,7 +94,6 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
     dispatch(reactToComment({ commentId, reactionType: type })).catch((err) => {
       toast.error(err?.message || `Failed to update ${type}`);
-      // Optional: revert here
     });
   };
 
@@ -141,6 +154,42 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
           </CardFooter>
         </Card>
       )}
+
+      {/* Sorting Controls */}
+      <div className="flex gap-4 items-center">
+        <Label className="font-medium">Sort by:</Label>
+
+        {/* Sort By */}
+        <Select
+          value={sortBy}
+          onValueChange={(val) =>
+            setSortBy(val as "createdAt" | "likesCount" | "dislikesCount")
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select sort field" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="createdAt">Date</SelectItem>
+            <SelectItem value="likesCount">Likes</SelectItem>
+            <SelectItem value="dislikesCount">Dislikes</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort Order */}
+        <Select
+          value={sortOrder}
+          onValueChange={(val) => setSortOrder(val as "asc" | "desc")}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="desc">Descending</SelectItem>
+            <SelectItem value="asc">Ascending</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Comments Section */}
       <div>
