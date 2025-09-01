@@ -12,6 +12,7 @@ import {
 } from "../components/ui/form";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
+import { toast } from "sonner";
 
 type SignupFormValues = {
   name: string;
@@ -32,11 +33,13 @@ const SignupPage = () => {
 
   const onSubmit = async (values: SignupFormValues) => {
     try {
-      await api.post("/auth/signup", values);
+      const res = await api.post("/auth/signup", values);
+      toast.success(res?.data?.message || "Signup success");
+
       navigate("/login");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      alert(err?.message || "Signup failed");
+      toast.error(err?.message || "Signup failed!");
     }
   };
 

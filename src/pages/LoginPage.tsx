@@ -14,6 +14,7 @@ import {
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
+import { toast } from "sonner";
 
 type LoginFormValues = {
   email: string;
@@ -40,11 +41,13 @@ const LoginPage = () => {
           user: res.data.data,
         })
       );
+      toast.success(res?.data?.message || "Login Success!");
+
       navigate("/"); // redirect home
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || "Login failed");
+      toast.error(err?.message || "Login failed");
     }
   };
 
