@@ -8,8 +8,10 @@ import {
   deleteComment,
   replyToComment,
   reactToComment,
-  updateReaction,
   selectComments,
+  type Comment,
+  socketAddComment,
+  updateReaction,
 } from "../redux/features/comments/commentSlice";
 import {
   Card,
@@ -21,6 +23,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { connectSocket } from "../lib/socket";
 
 interface CommentsSectionProps {
   postId: string;
@@ -37,12 +40,26 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
+  // Inside useEffect
   useEffect(() => {
-    if (postId) {
-      dispatch(fetchComments(postId))
-        .unwrap()
-        .catch(() => toast.error("Failed to load comments"));
-    }
+    if (!postId) return;
+
+    dispatch(fetchComments(postId))
+      .unwrap()
+      .catch(() => toast.error("Failed to load comments"));
+
+    const socket = connectSocket(); // connect socket
+
+    socket.on("newComment", (comment: Comment) => {
+      if (comment.postId === postId && comment.user.id !== user?.id) {
+        dispatch(socketAddComment(comment));
+        toast.success("New comment added");
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [postId, dispatch]);
 
   const handleAddComment = async () => {
@@ -56,17 +73,15 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     }
   };
 
-  const handleLike = async (commentId: string, type: "Like" | "Dislike") => {
-    // Optimistic update
-    dispatch(updateReaction({ id: commentId, type }));
-    try {
-      await dispatch(
-        reactToComment({ commentId, reactionType: type })
-      ).unwrap();
-      toast.success(`${type} added`);
-    } catch (err: any) {
-      toast.error(err?.message || `Failed to add ${type}`);
-    }
+  const handleLike = (commentId: string, type: "Like" | "Dislike") => {
+    if (!user) return;
+
+    dispatch(updateReaction({ id: commentId, type, userId: user.id }));
+
+    dispatch(reactToComment({ commentId, reactionType: type })).catch((err) => {
+      toast.error(err?.message || `Failed to update ${type}`);
+      // Optional: revert here
+    });
   };
 
   const handleDelete = async (commentId: string) => {
@@ -132,8 +147,13 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
         <h2 className="text-xl font-bold mb-4">Comments</h2>
         {comments?.length ? (
           comments.map((c) => {
-            const liked = false;
-            const disliked = false;
+            const liked = c.reactions?.some(
+              (r) => r.type === "Like" && r.user.id === user?.id
+            );
+
+            const disliked = c.reactions?.some(
+              (r) => r.type === "Dislike" && r.user.id === user?.id
+            );
 
             return (
               <Card key={c.id} className="mb-3">
@@ -171,6 +191,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
                         >
                           Dislike
                         </Button>
+
                         <Button
                           size="sm"
                           variant="outline"

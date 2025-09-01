@@ -9,6 +9,7 @@ import type { RootState } from "../../../store/store";
 
 export type Comment = {
   id: string;
+  postId: string;
   content: string;
   user: { id: string; name: string };
   likesCount: number;
@@ -84,7 +85,7 @@ export const replyToComment = createAsyncThunk<
   { commentId: string; postId: string; content: string }
 >("comments/reply", async ({ postId, commentId, content }) => {
   const res = await api.post(`/comments/reply`, { postId, commentId, content });
-  return { ...res.data.data, parentId: commentId }; // attach parentId
+  return { ...res.data.data, parentId: commentId };
 });
 
 //* Slice
@@ -94,13 +95,68 @@ const commentSlice = createSlice({
   reducers: {
     updateReaction: (
       state,
-      action: PayloadAction<{ id: string; type: "Like" | "Dislike" }>
+      action: PayloadAction<{
+        id: string;
+        type: "Like" | "Dislike";
+        userId: string;
+      }>
     ) => {
       const comment = state.result.find((c) => c.id === action.payload.id);
-      if (comment) {
-        if (action.payload.type === "Like") comment.likesCount += 1;
-        else comment.dislikesCount += 1;
+      if (!comment) return;
+
+      if (!comment.reactions) comment.reactions = [];
+
+      const { type, userId } = action.payload;
+
+      // Check if the user already reacted
+      const existingIdx = comment.reactions.findIndex(
+        (r) => r.user.id === userId
+      );
+
+      if (existingIdx !== -1) {
+        const existing = comment.reactions[existingIdx];
+
+        if (existing.type === type) {
+          // Case 1: User clicked the same reaction → remove it
+          comment.reactions.splice(existingIdx, 1);
+
+          if (type === "Like") {
+            comment.likesCount = Math.max(0, comment.likesCount - 1);
+          } else {
+            comment.dislikesCount = Math.max(0, comment.dislikesCount - 1);
+          }
+        } else {
+          // Case 2: User switched from Like → Dislike or vice versa
+          comment.reactions[existingIdx].type = type;
+
+          if (type === "Like") {
+            comment.likesCount += 1;
+            comment.dislikesCount = Math.max(0, comment.dislikesCount - 1);
+          } else {
+            comment.dislikesCount += 1;
+            comment.likesCount = Math.max(0, comment.likesCount - 1);
+          }
+        }
+      } else {
+        // Case 3: New reaction
+        comment.reactions.push({
+          id: Date.now().toString(), // temporary id
+          type,
+          commentId: comment.id,
+          user: { id: userId, name: "" },
+        });
+
+        if (type === "Like") {
+          comment.likesCount += 1;
+        } else {
+          comment.dislikesCount += 1;
+        }
       }
+    },
+
+    //* SOCKET REDUCERS
+    socketAddComment: (state, action: PayloadAction<Comment>) => {
+      state.result.unshift(action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -151,6 +207,6 @@ const commentSlice = createSlice({
   },
 });
 
-export const { updateReaction } = commentSlice.actions;
+export const { updateReaction, socketAddComment } = commentSlice.actions;
 export const selectComments = (state: RootState) => state.comments.result;
 export default commentSlice.reducer;
