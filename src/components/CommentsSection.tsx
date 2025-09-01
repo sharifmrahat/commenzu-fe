@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { api } from "../lib/axios";
-import { useAppSelector } from "../store/hooks";
+import { useAppSelector, useAppDispatch } from "../store/hooks";
+import {
+  fetchComments,
+  addComment,
+  updateComment,
+  deleteComment,
+  replyToComment,
+  reactToComment,
+  updateReaction,
+  selectComments,
+} from "../redux/features/comments/commentSlice";
 import {
   Card,
   CardContent,
@@ -13,103 +22,58 @@ import { Button } from "../components/ui/button";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
-type Comment = {
-  id: string;
-  content: string;
-  user: { id: string; name: string };
-  likesCount: number;
-  dislikesCount: number;
-  replies?: Comment[];
-  reactions?: {
-    id: string;
-    type: "Like" | "Dislike";
-    commentId: string;
-    user: {
-      id: string;
-      name: string;
-    };
-  }[];
-};
-
 interface CommentsSectionProps {
   postId: string;
 }
 
 const CommentsSection = ({ postId }: CommentsSectionProps) => {
+  const dispatch = useAppDispatch();
   const { accessToken, user } = useAppSelector((state) => state.auth);
+  const comments = useAppSelector(selectComments);
 
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [page] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [newComment, setNewComment] = useState("");
-
-  // local states for edit/reply
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
-  const fetchComments = async (pageNum = 1) => {
-    try {
-      const res = await api.get(`/comments`, {
-        params: { postId, page: pageNum, size: 20 },
-      });
-      const result = res.data.data.result;
-      if (pageNum === 1) {
-        setComments(result);
-      } else {
-        setComments((prev) => [...prev, ...result]);
-      }
-      setHasMore(pageNum < res.data.data.meta.totalPage);
-    } catch (err) {
-      console.error(err);
+  useEffect(() => {
+    if (postId) {
+      dispatch(fetchComments(postId))
+        .unwrap()
+        .catch(() => toast.error("Failed to load comments"));
     }
-  };
+  }, [postId, dispatch]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const res = await api.post(
-        `/comments`,
-        { postId, content: newComment },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+      await dispatch(addComment({ postId, content: newComment })).unwrap();
       setNewComment("");
-      fetchComments(1);
-      toast.success(res?.data?.message || "Comment added");
+      toast.success("Comment added");
     } catch (err: any) {
-      console.error(err);
       toast.error(err?.message || "Failed to add comment");
     }
   };
 
-  const handleLike = async (
-    commentId: string,
-    reactionType: "Like" | "Dislike"
-  ) => {
+  const handleLike = async (commentId: string, type: "Like" | "Dislike") => {
+    // Optimistic update
+    dispatch(updateReaction({ id: commentId, type }));
     try {
-      const res = await api.post(
-        `/comments/react`,
-        { commentId, reactionType },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      fetchComments(1);
-      toast.success(res?.data?.message || `${reactionType} added`);
+      await dispatch(
+        reactToComment({ commentId, reactionType: type })
+      ).unwrap();
+      toast.success(`${type} added`);
     } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || `Failed to add ${reactionType}`);
+      toast.error(err?.message || `Failed to add ${type}`);
     }
   };
 
   const handleDelete = async (commentId: string) => {
     try {
-      const res = await api.delete(`/comments/${commentId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      fetchComments(1);
-      toast.success(res?.data?.message || `Comment deleted`);
+      await dispatch(deleteComment({ id: commentId })).unwrap();
+      toast.success("Comment deleted");
     } catch (err: any) {
-      console.error(err);
       toast.error(err?.message || "Failed to delete comment");
     }
   };
@@ -117,17 +81,13 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   const handleEdit = async (commentId: string) => {
     if (!editContent.trim()) return;
     try {
-      const res = await api.post(
-        `/comments/${commentId}`,
-        { content: editContent },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+      await dispatch(
+        updateComment({ id: commentId, content: editContent })
+      ).unwrap();
       setEditingCommentId(null);
       setEditContent("");
-      fetchComments(1);
-      toast.success(res?.data?.message || "Comment updated");
+      toast.success("Comment updated");
     } catch (err: any) {
-      console.error(err);
       toast.error(err?.message || "Failed to update comment");
     }
   };
@@ -135,26 +95,16 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   const handleReply = async (parentId: string) => {
     if (!replyContent.trim()) return;
     try {
-      const res = await api.post(
-        `/comments/reply`,
-        { postId, content: replyContent, commentId: parentId },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+      await dispatch(
+        replyToComment({ postId, commentId: parentId, content: replyContent })
+      ).unwrap();
       setReplyingTo(null);
       setReplyContent("");
-      fetchComments(1);
-      toast.success(res?.data?.message || "Reply added");
+      toast.success("Reply added");
     } catch (err: any) {
-      console.error(err);
       toast.error(err?.message || "Failed to add reply");
     }
   };
-
-  useEffect(() => {
-    if (postId) {
-      fetchComments();
-    }
-  }, [postId]);
 
   return (
     <div className="space-y-6">
@@ -182,17 +132,14 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
         <h2 className="text-xl font-bold mb-4">Comments</h2>
         {comments?.length ? (
           comments.map((c) => {
-            const userReaction = c.reactions?.find(
-              (r) => r.user.id === user?.id
-            );
-            const liked = userReaction?.type === "Like";
-            const disliked = userReaction?.type === "Dislike";
+            const liked = false;
+            const disliked = false;
 
             return (
               <Card key={c.id} className="mb-3">
                 <CardContent className="space-y-2">
                   <p>
-                    <b>{c.user.name}</b>:{" "}
+                    <b>{c.user?.name}</b>:{" "}
                     {editingCommentId === c.id ? (
                       <Textarea
                         value={editContent}
@@ -235,7 +182,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
                         </Button>
                       </>
                     )}
-                    {user?.id === c.user.id && (
+                    {user?.id === c.user?.id && (
                       <>
                         {editingCommentId === c.id ? (
                           <>
@@ -276,7 +223,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
                   </div>
 
                   {/* Reply textarea */}
-                  {replyingTo === c.id && (
+                  {replyingTo === c?.id && (
                     <div className="ml-6 mt-2">
                       <Textarea
                         placeholder="Write a reply..."
@@ -303,7 +250,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
                       {c.replies.map((r) => (
                         <div key={r.id}>
                           <p>
-                            <b>{r.user.name}</b>: {r.content}
+                            <b>{r.user?.name}</b>: {r.content}
                           </p>
                         </div>
                       ))}
@@ -318,12 +265,6 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
             <AlertTitle>No comments are found!</AlertTitle>
             <AlertDescription>Add new comments to this post.</AlertDescription>
           </Alert>
-        )}
-
-        {hasMore && (
-          <div className="flex justify-center mt-4">
-            <Button onClick={() => fetchComments(page + 1)}>Load More</Button>
-          </div>
         )}
       </div>
     </div>
